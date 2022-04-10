@@ -1,3 +1,6 @@
+
+
+
 class Solution(object):
     def nthUglyNumber(self, n):
         """
@@ -35,6 +38,9 @@ class Solution(object):
                 return False
         elif(num==1):
             return True
+
+global update
+update = True
 
 test = 10
 solution = Solution()
