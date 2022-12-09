@@ -3,100 +3,67 @@ package main
 // the max length of row/col
 var length = 1000
 
-type colRowPointer struct {
-	isCol      bool
-	index      int
-	otherIndex *[]int
-}
-
 func main() {
-
+	//[[4,4],[5,5],[3,1],[1,4],[1,1],[2,3],[0,3],[2,4],[3,5]]
+	//var stones = [][]int{{0, 0}, {0, 1}, {1, 0}, {1, 2}, {2, 1}, {2, 2}}
+	// [[1,2],[6,9],[8,2],[2,9],[7,1],[3,0],[2,8],[6,1],[4,4],[5,2],[1,4],[3,8],[9,2],[0,7],[0,9],[3,4],[8,5],[1,1]]
+	// var stones = [][]int{{4, 4}, {5, 5}, {3, 1}, {1, 4}, {1, 1}, {2, 3}, {0, 3}, {2, 4}, {3, 5}}
+	var stones = [][]int{{1, 2}, {6, 9}, {8, 2}, {2, 9}, {7, 1}, {3, 0}, {2, 8}, {6, 1}, {4, 4}, {5, 2}, {1, 4}, {3, 8}, {9, 2}, {0, 7}, {0, 9}, {3, 4}, {8, 5}, {1, 1}}
+	print(removeStones(stones))
 }
 
 func removeStones(stones [][]int) int {
-	// initial the col row counts
-	colCounts := make([][]int, length)
+	var length = 1000
+	var colSets = make([]int, length)
 	for i := 0; i < length; i++ {
-		colCounts[i] = make([]int, 0)
+		colSets[i] = -1
 	}
-	rowCounts := make([][]int, length)
+	var rowSets = make([]int, length)
 	for i := 0; i < length; i++ {
-		rowCounts[i] = make([]int, 0)
+		rowSets[i] = -1
 	}
-	// populate the col row counts
-	for x := 0; x < len(stones); x++ {
-		stone := stones[x]
-		colCounts[stone[1]] = append(colCounts[stone[1]], stone[0])
-		rowCounts[stone[0]] = append(rowCounts[stone[0]], stone[1])
-	}
-
-	// initial the col row pointer like hashmaps.
-	colRowPointers := make([][]colRowPointer, length)
-	for i := 0; i < length; i++ {
-		colRowPointers = make([][]colRowPointer, 0)
-	}
-
-	// populate the colRowPointers
-	for i := 0; i < length; i++ {
-		size := len(colCounts[i])
-		newPointer := colRowPointer{true, i, &colCounts[i]}
-		if colRowPointers[size] == nil {
-			colRowPointers[size] = []colRowPointer{newPointer}
-		} else {
-			colRowPointers[size] = append(colRowPointers[size], newPointer)
-		}
-	}
-	for i := 0; i < length; i++ {
-		size := len(rowCounts[i])
-		newPointer := colRowPointer{false, i, &rowCounts[i]}
-		if colRowPointers[size] == nil {
-			colRowPointers[size] = []colRowPointer{newPointer}
-		} else {
-			colRowPointers[size] = append(colRowPointers[size], newPointer)
-		}
-	}
-
-	// start removing
-	var removed = 0
-	var notRemovable = 0
-	var total = len(stones)
-	for removed+notRemovable < total {
-		for i := 1; i < length; i++ {
-			// if we have pointers indicate a row or col has stone
-			if (len(colRowPointers[i]) > 0) {
-				// if we have a row or col with just one stone. Then this stone is decisive.
-				// It can either be removed or not. 
-				if i == 1 {
-					// just pick anyone
-					targetPointer := colRowPointers[1][0]
-					var targetStone []int
-					if(targetPointer.isCol) {
-						targetStone = int[(*targetPointer.otherIndex)[0],targetPointer.index]
-						var otherConnection = rowCounts[targetStone[0]]
-						if otherConnection == 0 {
-							removed++
-						} else {
-							notRemovable++
-						}
-						rowCounts
-					} else {
-						targetStone = int[targetPointer.index, (*targetPointer.otherIndex)[0]]
-					}
-				}
+	var setsIds = make([]int, 0)
+	for i := 0; i < len(stones); i++ {
+		currentStone := stones[i]
+		currentCol := currentStone[0]
+		currentRow := currentStone[1]
+		if colSets[currentCol] == -1 && rowSets[currentRow] == -1 {
+			// creating new set
+			newId := len(setsIds)
+			setsIds = append(setsIds, newId)
+			colSets[currentCol] = newId
+			rowSets[currentRow] = newId
+		} else if colSets[currentCol] != -1 && rowSets[currentRow] != -1 {
+			// checking if we need link sets
+			colSet := colSets[currentCol]
+			rowSet := rowSets[currentRow]
+			colSetId := findSetId(setsIds, colSet)
+			rowSetId := findSetId(setsIds, rowSet)
+			var minSetsId = colSetId
+			if rowSetId < colSetId {
+				minSetsId = rowSetId
 			}
-			
-			if len(colRowPointers[i]) > 0 {
-				// just pick any pointer
-				targetPointer := colRowPointers[i][0]
-				// pick the stone with least connection
-				var leastConnectedStone 
-				for j := 0; j < len(*(targetPointer.otherIndex)); j++ {
-					
-				}
-				break
-			}
+			setsIds[colSetId] = minSetsId
+			setsIds[rowSetId] = minSetsId
+		} else if colSets[currentCol] != -1 {
+			rowSets[currentRow] = colSets[currentCol]
+		} else {
+			colSets[currentCol] = rowSets[currentRow]
+		}
+	}
+	var individualComponent = 0
+	for i := 0; i < len(setsIds); i++ {
+		if setsIds[i] == i {
+			individualComponent++
 		}
 	}
 
-	return 0
+	return len(stones) - individualComponent
+}
+
+func findSetId(setsId []int, set int) int {
+	for setsId[set] != set {
+		set = setsId[set]
+	}
+	return set
 }
